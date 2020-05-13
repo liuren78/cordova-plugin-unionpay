@@ -4,3 +4,7 @@ var exec = require('cordova/exec');
 exports.starPay = function(tn, success, error) {
     exec(success, error, "UnionPay", "starPay", [ tn ]);
 };
+
+exports.startSEPay = function(tn, test_mode, success, error) {
+    exec(success, error, "UnionPay", "starSEPay", [ tn, test_mode ]);
+};

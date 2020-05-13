@@ -59,6 +59,38 @@ public class UnionPay extends CordovaPlugin {
 
             return true;
         }
+        if (action.equals("starSEPay")) {
+            try{
+                String tn = args.getString(0);
+
+                if(tn == null || tn.isEmpty()){
+                  callbackContext.error("parameter tn is null error");
+                } else {
+                  Log.d(LOG_TAG, String.format("Start payment with transaction number \"%s\" and mode \"%s\".", tn, g_TestMode));
+
+                  UPQuerySEPayInfoCallback callback = new UPQuerySEPayInfoCallback() {
+                    @Override
+                    public void onResult(String SEName, String seType, int cardNumbers, Bundle reserved) {
+                        // 该方法在手机Pay正常情况下回调
+                        UPPayAssistEx.startSEPay(cordova.getActivity(), null, null, tn, g_TestMode, seType);                       
+                    }
+                    @Override
+                    public void onError(String SEName, String seType, String errorCode,String errorDesc) {
+                        // 该方法在手机Pay异常情况下回调
+						if ("02".equals(errorCode)) g_unionpayCallbackContext.error("请先在手机的钱包APP中绑卡！");
+                        else g_unionpayCallbackContext.error("暂不支持该手机钱包: " + errorDesc);
+                    }
+                  };
+                  int ret = UPPayAssistEx.getSEPayInfo(cordova.getActivity(), callback);
+                }
+            } catch (Exception e) {
+                //callbackContext.error("Exception: " + e.getMessage());
+                callbackContext.error("暂不支持该手机钱包: [Exception] " + e.getMessage());
+            }
+
+            return true;
+        } 
+        
         return false;
     }
 
