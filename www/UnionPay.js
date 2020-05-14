@@ -6,5 +6,5 @@ exports.starPay = function(tn, success, error) {
 };
 
 exports.startSEPay = function(tn, test_mode, success, error) {
-    exec(success, error, "UnionPay", "starSEPay", [ tn, test_mode ]);
+    exec(success, error, "UnionPay", "starSEPay", [ tn ]);
 };
