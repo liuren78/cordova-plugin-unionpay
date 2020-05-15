@@ -22,9 +22,7 @@ public class UnionPay extends CordovaPlugin {
     private final static String APP_ID = "UNIONPAY_APPID";
 
     /**
-     * Payment mode, defaults to "00"
-     *   * "00" => Official
-     *   * "01" => Test
+     * Payment mode, defaults to "00" * "00" => Official * "01" => Test
      */
     private static String g_TestMode = "00";
     private static String g_AppID = "";
@@ -45,52 +43,66 @@ public class UnionPay extends CordovaPlugin {
         cordova.setActivityResultCallback(this);
 
         if (action.equals("starPay")) {
-            try{
+            try {
                 String tn = args.getString(0);
-                if(tn == null || tn.isEmpty()){
-                  callbackContext.error("parameter tn is null error");
-                }else{
-                  Log.d(LOG_TAG, String.format("Start payment with transaction number \"%s\" and mode \"%s\".", tn, g_TestMode));
-                  UPPayAssistEx.startPay(cordova.getActivity(), null, null, tn, g_TestMode);
+                if (tn == null || tn.isEmpty()) {
+                    callbackContext.error("parameter tn is null error");
+                } else {
+                    Log.d(LOG_TAG, String.format("Start payment with transaction number \"%s\" and mode \"%s\".", tn,
+                            g_TestMode));
+                    UPPayAssistEx.startPay(cordova.getActivity(), null, null, tn, g_TestMode);
                 }
             } catch (Exception e) {
                 callbackContext.error(e.getMessage());
             }
 
             return true;
-        }
-        if (action.equals("starSEPay")) {
-            try{
-                String tn = args.getString(0);
+        } else if (action.equals("getSEPayInfo")) {
+            try {
+                Log.d(LOG_TAG, String.format("getSEPayInfo"));
 
-                if(tn == null || tn.isEmpty()){
-                  callbackContext.error("parameter tn is null error");
-                } else {
-                  Log.d(LOG_TAG, String.format("Start payment with transaction number \"%s\" and mode \"%s\".", tn, g_TestMode));
-
-                  UPQuerySEPayInfoCallback callback = new UPQuerySEPayInfoCallback() {
+                UPQuerySEPayInfoCallback callback = new UPQuerySEPayInfoCallback() {
                     @Override
                     public void onResult(String SEName, String seType, int cardNumbers, Bundle reserved) {
-                        // 该方法在手机Pay正常情况下回调
-                        UPPayAssistEx.startSEPay(cordova.getActivity(), null, null, tn, g_TestMode, seType);                       
+                        g_unionpayCallbackContext.success(seType);
                     }
+
                     @Override
-                    public void onError(String SEName, String seType, String errorCode,String errorDesc) {
+                    public void onError(String SEName, String seType, String errorCode, String errorDesc) {
                         // 该方法在手机Pay异常情况下回调
-						if ("02".equals(errorCode)) g_unionpayCallbackContext.error("请先在手机的钱包APP中绑卡！");
-                        else g_unionpayCallbackContext.error("暂不支持该手机钱包: " + errorDesc);
+                        if ("02".equals(errorCode))
+                            g_unionpayCallbackContext.error("请先在手机的钱包APP中绑卡！");
+                        else
+                            g_unionpayCallbackContext.error("暂不支持该手机钱包: " + errorDesc);
                     }
-                  };
-                  int ret = UPPayAssistEx.getSEPayInfo(cordova.getActivity(), callback);
-                }
+                };
+
             } catch (Exception e) {
-                //callbackContext.error("Exception: " + e.getMessage());
+                // callbackContext.error("Exception: " + e.getMessage());
                 callbackContext.error("暂不支持该手机钱包: [Exception] " + e.getMessage());
             }
 
             return true;
-        } 
-        
+        } else if (action.equals("starSEPay")) {
+            try {
+                String tn = args.getString(0);
+                String seType = args.getString(1);
+                if (tn == null || tn.isEmpty() || seType == null || seType.isEmpty()) {
+                    callbackContext.error("参数错误");
+                } else {
+                    Log.d(LOG_TAG, String.format("Start payment with transaction number \"%s\" and mode \"%s\".", tn,
+                            g_TestMode));
+
+                    UPPayAssistEx.startSEPay(cordova.getActivity(), null, null, tn, g_TestMode, seType);
+
+                }
+            } catch (Exception e) {
+                callbackContext.error("Exception: " + e.getMessage());
+            }
+
+            return true;
+        }
+
         return false;
     }
 
@@ -108,12 +120,12 @@ public class UnionPay extends CordovaPlugin {
             String payResult = intent.getExtras().getString("pay_result");
             resultJson.put("pay_result", payResult);
             if (payResult.equalsIgnoreCase("success")) {
-              if (intent.hasExtra("result_data")) {
-                  String resultData = intent.getExtras().getString("result_data");
-                  JSONObject dataJson = new JSONObject(resultData);
-                  resultJson.put("data",dataJson.getString("data"));
-                  resultJson.put("sign",dataJson.getString("sign"));
-              }
+                if (intent.hasExtra("result_data")) {
+                    String resultData = intent.getExtras().getString("result_data");
+                    JSONObject dataJson = new JSONObject(resultData);
+                    resultJson.put("data", dataJson.getString("data"));
+                    resultJson.put("sign", dataJson.getString("sign"));
+                }
             }
             g_unionpayCallbackContext.success(resultJson.toString());
         } catch (JSONException e) {
@@ -122,9 +134,9 @@ public class UnionPay extends CordovaPlugin {
     }
 
     private void initMode() {
-      g_TestMode = preferences.getString(TEST_MODE, "00");
-      g_AppID = preferences.getString(APP_ID, "");
-      Log.d(LOG_TAG, String.format("Initialized payment mode as %s.", g_TestMode));
+        g_TestMode = preferences.getString(TEST_MODE, "00");
+        g_AppID = preferences.getString(APP_ID, "");
+        Log.d(LOG_TAG, String.format("Initialized payment mode as %s.", g_TestMode));
     }
 
 }
